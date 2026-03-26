@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: engram
+Version: 0.1.0
+Summary: Agentic Knowledge Graph with MCP Server
+Author-email: Engram Team <team@engram.ai>
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastmcp>=0.1.0
+Requires-Dist: redis>=5.0.0
+Requires-Dist: fastembed>=0.3.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: numpy>=1.24.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"

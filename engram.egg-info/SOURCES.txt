@@ -1,0 +1,10 @@
+pyproject.toml
+engram/__init__.py
+engram.egg-info/PKG-INFO
+engram.egg-info/SOURCES.txt
+engram.egg-info/dependency_links.txt
+engram.egg-info/requires.txt
+engram.egg-info/top_level.txt
+engram/embeddings/__init__.py
+engram/embeddings/provider.py
+tests/test_embeddings.py
