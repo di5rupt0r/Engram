@@ -29,7 +29,7 @@ def get_redis_client() -> EngramRedisClient:
 
 
 @mcp.tool()
-def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+async def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
     """Store a node in the knowledge graph with automatic embedding generation."""
     try:
         node_id = str(uuid.uuid4())
@@ -84,7 +84,7 @@ def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, 
 
 
 @mcp.tool()
-def recall(query: str, domain_filter: Optional[List[str]] = None, 
+async def recall(query: str, domain_filter: Optional[List[str]] = None, 
            type_filter: Optional[List[str]] = None, limit: int = 5) -> str:
     """Hybrid search with RRF scoring and manifest intercept."""
     try:
@@ -141,7 +141,7 @@ def recall(query: str, domain_filter: Optional[List[str]] = None,
 
 
 @mcp.tool()
-def patch(node_id: str, operations: List[Dict[str, Any]]) -> str:
+async def patch(node_id: str, operations: List[Dict[str, Any]]) -> str:
     """Apply atomic JSON patch operations to a node."""
     try:
         redis_client = get_redis_client()
@@ -181,7 +181,7 @@ def patch(node_id: str, operations: List[Dict[str, Any]]) -> str:
 
 
 @mcp.tool()
-def search_exact(query: str, limit: int = 10) -> str:
+async def search_exact(query: str, limit: int = 10) -> str:
     """Pure BM25 text search for exact matches."""
     try:
         redis_client = get_redis_client()
@@ -207,7 +207,7 @@ def search_exact(query: str, limit: int = 10) -> str:
 
 
 @mcp.tool()
-def inspect_node(node_id: str) -> str:
+async def inspect_node(node_id: str) -> str:
     """Retrieve raw node data with complete edge relationships."""
     try:
         redis_client = get_redis_client()
