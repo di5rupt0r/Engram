@@ -5,11 +5,15 @@ import time
 import yaml
 import logging
 from typing import List, Dict, Any, Optional
+from fastmcp import FastMCP
 from .redis.client import EngramRedisClient
 from .embeddings.provider import generate_embedding
 from .index.setup import setup_redis_index
 
 logger = logging.getLogger(__name__)
+
+# Create FastMCP instance
+mcp = FastMCP("Engram")
 
 # Global Redis client
 _redis_client: Optional[EngramRedisClient] = None
@@ -24,6 +28,7 @@ def get_redis_client() -> EngramRedisClient:
     return _redis_client
 
 
+@mcp.tool()
 def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
     """Store a node in the knowledge graph with automatic embedding generation."""
     try:
@@ -78,6 +83,7 @@ def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, 
         return yaml.dump(error_result, default_flow_style=False)
 
 
+@mcp.tool()
 def recall(query: str, domain_filter: Optional[List[str]] = None, 
            type_filter: Optional[List[str]] = None, limit: int = 5) -> str:
     """Hybrid search with RRF scoring and manifest intercept."""
@@ -134,6 +140,7 @@ def recall(query: str, domain_filter: Optional[List[str]] = None,
         return yaml.dump(error_result, default_flow_style=False)
 
 
+@mcp.tool()
 def patch(node_id: str, operations: List[Dict[str, Any]]) -> str:
     """Apply atomic JSON patch operations to a node."""
     try:
@@ -173,6 +180,7 @@ def patch(node_id: str, operations: List[Dict[str, Any]]) -> str:
         return yaml.dump(error_result, default_flow_style=False)
 
 
+@mcp.tool()
 def search_exact(query: str, limit: int = 10) -> str:
     """Pure BM25 text search for exact matches."""
     try:
@@ -198,6 +206,7 @@ def search_exact(query: str, limit: int = 10) -> str:
         return yaml.dump(error_result, default_flow_style=False)
 
 
+@mcp.tool()
 def inspect_node(node_id: str) -> str:
     """Retrieve raw node data with complete edge relationships."""
     try:

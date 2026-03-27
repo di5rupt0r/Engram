@@ -2,7 +2,7 @@
 
 import logging
 import os
-from engram.server import memorize, recall, patch as patch_node, search_exact, inspect_node
+from engram.server import mcp
 
 # Configure logging
 logging.basicConfig(
@@ -17,27 +17,20 @@ def main():
     logger.info("Starting Engram MCP Server...")
     
     try:
-        # Test Redis connection
-        from engram.redis.client import EngramRedisClient
-        redis_client = EngramRedisClient()
+        # Initialize Redis connection and components
+        from engram.server import get_redis_client
+        redis_client = get_redis_client()
         logger.info("Redis connection established")
         
-        # Test embedding generation
-        from engram.embeddings.provider import generate_embedding, get_embedding_dimension
-        test_embedding = generate_embedding("Test connection")
-        logger.info(f"Embedding generation working - dimension: {get_embedding_dimension()}")
+        # Start FastMCP SSE server
+        host = os.getenv('MCP_HOST', '0.0.0.0')
+        port = int(os.getenv('MCP_PORT', '8000'))
         
-        # Test index setup
-        from engram.index.setup import setup_redis_index
-        if setup_redis_index():
-            logger.info("Redis index setup successful")
-        else:
-            logger.warning("Redis index setup failed - continuing anyway")
-        
-        logger.info("Engram MCP Server ready and operational")
+        logger.info(f"Starting SSE server on {host}:{port}")
+        mcp.run(transport='sse', host=host, port=port)
         
     except Exception as e:
-        logger.error(f"Failed to initialize server: {e}")
+        logger.error(f"Failed to start server: {e}")
         raise
 
 
