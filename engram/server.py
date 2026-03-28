@@ -46,18 +46,7 @@ def memorize(domain: str, type: str, content: str, metadata: Optional[Dict[str, 
         )
         
         if success:
-            current_manifest = redis_client.get_manifest()
-            if current_manifest:
-                domains = set(current_manifest.get("domains", []))
-                entities = set(current_manifest.get("entities", []))
-            else:
-                domains = set()
-                entities = set()
-            
-            domains.add(domain)
-            entities.add(node_id)
-            
-            redis_client.update_manifest(domains, entities)
+            redis_client.update_manifest(domain, node_id)
             
             result = {
                 "status": "success",
@@ -90,12 +79,12 @@ def recall(query: str, domain_filter: Optional[List[str]] = None,
     try:
         redis_client = get_redis_client()
         
+        # Manifest Intercept (Flexible Query)
         if query in ["*", "manifest"]:
-            manifest = redis_client.get_manifest()
-            if manifest:
-                return yaml.dump(manifest, default_flow_style=False)
-            else:
-                return yaml.dump({"message": "No manifest found"}, default_flow_style=False)
+            # If domain filter is provided, get domain manifest
+            domain = domain_filter[0] if domain_filter else None
+            manifest = redis_client.get_manifest(domain)
+            return yaml.dump(manifest, default_flow_style=False)
         
         query_embedding = generate_embedding(query)
         

@@ -14,58 +14,41 @@ VECTOR_ALGORITHM = "FLAT"
 
 
 def create_index(redis_client: redis.Redis, drop_existing: bool = False) -> bool:
-    """Create the RediSearch index for Engram nodes."""
+    """Create the RediSearch index for Engram nodes using raw commands."""
     try:
         if drop_existing:
             try:
-                redis_client.ft(INDEX_NAME).dropindex()
+                redis_client.execute_command("FT.DROPINDEX", INDEX_NAME)
                 logger.info(f"Dropped existing index: {INDEX_NAME}")
             except Exception:
                 pass
         
-        # Mock index creation for testing
-        redis_client.ft(INDEX_NAME).create_index([], None)
+        # Define the schema for RediSearch on JSON
+        # Vector dimension is 384 for all-MiniLM-L6-v2
+        schema = [
+            "FT.CREATE", INDEX_NAME,
+            "ON", "JSON",
+            "PREFIX", "1", PREFIX,
+            "SCHEMA",
+            "$.domain", "AS", "domain", "TAG",
+            "$.type", "AS", "type", "TAG",
+            "$.content", "AS", "content", "TEXT", "SORTABLE",
+            "$.created_at", "AS", "created_at", "NUMERIC", "SORTABLE",
+            "$.embedding", "AS", "embedding", "VECTOR", "FLAT", "6",
+            "TYPE", "FLOAT32",
+            "DIM", str(VECTOR_DIM),
+            "DISTANCE_METRIC", VECTOR_DISTANCE
+        ]
+        
+        redis_client.execute_command(*schema)
         logger.info(f"Successfully created index: {INDEX_NAME}")
         return True
         
     except Exception as e:
+        if "Index already exists" in str(e):
+            logger.info(f"Index {INDEX_NAME} already exists")
+            return True
         logger.error(f"Failed to create index: {e}")
-        return False
-
-
-def verify_index(redis_client: redis.Redis) -> bool:
-    """Verify that the index exists and has the correct schema."""
-    try:
-        info = redis_client.ft(INDEX_NAME).info()
-        
-        # For testing, assume the info has the expected structure
-        if not isinstance(info, dict):
-            return False
-        
-        required_fields = ["domain", "type", "content", "embedding", "created_at"]
-        index_fields = [field["name"] for field in info.get("attributes", [])]
-        
-        for field in required_fields:
-            if field not in index_fields:
-                logger.error(f"Missing required field in index: {field}")
-                return False
-        
-        vector_field = next(
-            (f for f in info.get("attributes", []) if f["name"] == "embedding"), None
-        )
-        if not vector_field:
-            logger.error("Vector field 'embedding' not found in index")
-            return False
-            
-        if vector_field.get("vector", {}).get("DIM") != VECTOR_DIM:
-            logger.error(f"Vector dimension mismatch: expected {VECTOR_DIM}, got {vector_field['vector']['DIM']}")
-            return False
-            
-        logger.info("Index verification passed")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Index verification failed: {e}")
         return False
 
 
@@ -73,19 +56,11 @@ def setup_redis_index(host: str = "localhost", port: int = 6379, password: Optio
     """Complete Redis index setup process."""
     try:
         redis_client = redis.Redis(
-            host=host,
-            port=port,
-            password=password,
-            decode_responses=True,
+            host=host, port=port, password=password, decode_responses=True
         )
-        
         redis_client.ping()
-        logger.info("Connected to Redis successfully")
         
-        if verify_index(redis_client):
-            logger.info("Index already exists and is valid")
-            return True
-        
+        # Ensure we can run FT.CREATE (idempotency handled inside create_index)
         return create_index(redis_client, drop_existing=False)
         
     except Exception as e:
